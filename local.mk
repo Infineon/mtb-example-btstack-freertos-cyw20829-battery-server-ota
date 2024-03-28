@@ -36,44 +36,43 @@ DEFINES+= CY_RETARGET_IO_CONVERT_LF_TO_CRLF CY_RTOS_AWARE
 
 ifeq ($(OTA_BT_ONLY),1)
     COMPONENTS+=WICED_BLE
-ifneq ($(filter $(OTA_PLATFORM),PSOC_062_1M PSOC_063_1M),)
-    COMPONENTS+=CM0P_BLESS_OTA
-    DISABLE_COMPONENTS+=CM0P_BLESS
+    ifneq ($(filter $(OTA_PLATFORM),PSOC_062_1M PSOC_063_1M),)
+        COMPONENTS+=CM0P_BLESS_OTA
+        DISABLE_COMPONENTS+=CM0P_BLESS
 
-    # needed for test/COMPONENT_OTA_BLUETOOTH/app_bt_cfg.c
-    # to use .hci_transport = CYBT_HCI_IPC
-    DEFINES+=BLESS_PORTING_LAYER
-
-    $(info: ***Components included = WICED_BLE, SOFTFP, BTSS-IPC )
-endif
+        # needed for test/COMPONENT_OTA_BLUETOOTH/app_bt_cfg.c
+        # to use .hci_transport = CYBT_HCI_IPC
+        DEFINES+=BLESS_PORTING_LAYER
+        $(info: ***Components included = WICED_BLE, SOFTFP, BTSS-IPC )
+    endif
 endif
 
 ifneq ($(filter $(OTA_PLATFORM),PSOC_062_2M PSOC_062_512K PSOC_064_2M XMC7200),)
     COMPONENTS+=MBEDTLS SECURE_SOCKETS
-ifeq ($(OTA_BT_SUPPORT),1)
-    COMPONENTS+=WICED_BLE HCI-UART
-endif
+    ifeq ($(OTA_BT_SUPPORT),1)
+        COMPONENTS+=WICED_BLE HCI-UART
+    endif
 endif
 
 ifneq ($(filter 1,$(OTA_HTTP_SUPPORT) $(OTA_MQTT_SUPPORT)),)
     COMPONENTS+=MBEDTLS SECURE_SOCKETS
-ifeq ($(OTA_PLATFORM),XMC7200)
-	COMPONENTS+=ECM PSOC6HAL
-    DEFINES+=CYBSP_ETHERNET_CAPABLE
-else
-    DEFINES+=CYBSP_WIFI_CAPABLE
+    ifeq ($(OTA_PLATFORM),XMC7200)
+        COMPONENTS+=ECM PSOC6HAL
+        DEFINES+=CYBSP_ETHERNET_CAPABLE
+    else
+        DEFINES+=CYBSP_WIFI_CAPABLE
+    endif
+
+    ifneq ($(OTA_BT_ONLY),1)
+        COMPONENTS+=LWIP
+    endif
+    ifneq ($(OTA_BT_SUPPORT),1)
+        DISABLE_COMPONENTS+=WICED_BLE HCI-UART
+    endif
 endif
 
-ifneq ($(OTA_BT_ONLY),1)
-    COMPONENTS+=LWIP
-endif
-ifneq ($(OTA_BT_SUPPORT),1)
-    DISABLE_COMPONENTS+=WICED_BLE HCI-UART
-endif
-endif
-
-ifeq ($(OTA_PLATFORM),CYW20829)
-    # Misc for 20829
+ifneq ($(filter $(OTA_PLATFORM),CYW20829 CYW89829),)
+    # Misc for 20829 and 89829
     CORE?=CM33
     APPTYPE = flash
     CY_LCS  = NORMAL_NO_SECURE
@@ -85,12 +84,6 @@ ifeq ($(OTA_PLATFORM),XMC7200)
     # Misc for XMC7200
     APP_CORE?=CM7
     APPTYPE = flash
-endif
-
-
-ifeq ($(ACTUAL_TARGET), CYW920829M2EVK-02)
-    COMPONENTS+=BTFW-TX10 CYW20829B0
-    DISABLE_COMPONENTS=FIRMWARE-TX10
 endif
 
 ##################################################################################
@@ -106,6 +99,11 @@ CY_IGNORE+=$(SEARCH_command-console)/source/bluetooth_utility
 
 # # Always ignore this directory. Command_console brings in bluetooth-freertos, but we do not want it
 CY_IGNORE+=$(SEARCH_bluetooth-freertos)
+
+## Depending on crypto library used include crypto library component.
+ifeq ($(OTA_BT_SECURE),1)
+    COMPONENTS+=MBEDTLS
+endif
 
 ####################################################################################
 # This OTA Test Application includes / Defines
@@ -128,6 +126,6 @@ ifeq ($(TEST_SWAP_REVERT),1)
 endif
 
 # If not defined, set to 0 (default)
-ifeq ($(OTA_TEST_APP_VERSION_IN_TAR),)
-    OTA_TEST_APP_VERSION_IN_TAR=0
+ifeq ($(CY_TEST_APP_VERSION_IN_TAR),)
+    CY_TEST_APP_VERSION_IN_TAR=0
 endif

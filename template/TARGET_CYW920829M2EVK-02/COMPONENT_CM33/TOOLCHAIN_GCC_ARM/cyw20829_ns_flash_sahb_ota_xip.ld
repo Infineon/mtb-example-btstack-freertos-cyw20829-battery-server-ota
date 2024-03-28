@@ -1,5 +1,5 @@
 /***************************************************************************//**
-* \file cyw20829_ns_flash_cbus_ota_ext.ld
+* \file cyw20829_ns_flash_sahb.ld
 * \version 1.0.0
 *
 * Linker file for the GNU C compiler.
@@ -19,7 +19,7 @@
 *
 ********************************************************************************
 * \copyright
-* Copyright (c) (2020-2022), Cypress Semiconductor Corporation (an Infineon company) or
+* Copyright (c) (2020-2024), Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.
 * SPDX-License-Identifier: Apache-2.0
 *
@@ -48,6 +48,7 @@ BOOTSTRAP_SIZE = DEFINED(APP_BOOTSTRAP_SIZE) ? APP_BOOTSTRAP_SIZE : 0x00002400 ;
 /* The size of the stack section at the end of CM4 SRAM */
 STACK_SIZE = 0x1000;
 
+FLASH_START_ADDR_SAHB_ORIG  = 0x60000000;
 USER_APP_START_OFFSET       = MCUBOOT_HEADER_SIZE + FLASH_AREA_IMG_1_PRIMARY_START;
 
 FLASH_START_ADDR_SAHB       = 0x60000000 + USER_APP_START_OFFSET;
@@ -56,9 +57,9 @@ RAM_START_ADDR_SAHB         = 0x20000000;
 RAM_END_ADDR_SAHB           = 0x20040000; /* 256K */
 
 RAM_START_ADDR_CBUS         = 0x04000000;
-RAM_END_ADDR_CBUS           = 0x04040000; /* 256 */
+RAM_END_ADDR_CBUS           = 0x04040000; /* 256K */
 
-FLASH_END_ADDR_SAHB         = 0x60080000; /* 512K */
+FLASH_END_ADDR_SAHB         = 0x60100000; /* 1MB */
 
 BOOTSTRAP_OFFSET_FLASH      = 0x00000050; /* toc2=0x10, l1_desc=0x1C, sign_header=0x20 */
 
@@ -189,14 +190,10 @@ SECTIONS
         KEEP(*(.cy_ramfunc*))
         . = ALIGN(4);
 
-       /* Add Application files entries here.*/
-
-       /* Files, OTA library expects to be in RAM */
         *cy_smif.o(.text*)
         *cy_smif_memslot.o(.text*)
         *cy_smif_sfdp.o(.text*)
-        *cyhal_syspm.o(.text*)
-        
+
         KEEP( *(.text.cy_os_common*))
         KEEP (*(.text.cy_btstack_common*))
         KEEP (*(.text.cy_btstack_gatt*))
@@ -328,10 +325,9 @@ SECTIONS
         *cy_syslib*.o(.text*)
         *ppu_v1.o(.text*)
         *cy_mpc.o(.text*)
-        *cy_pd_ppu.o(.text*)
         *cy_syspm_ppu.o(.text*)
 
-        *memcpy*.o (.text*)   /* add memcpy from the NewLib library here*/
+        *memcpy*.o (.text*)        /* add memcpy from the NewLib library here*/
         *memset*.o (.text*)        /* add memcpy from the NewLib library here*/
         *memmove*.o (.text*)       /* add memcpy from the NewLib library here*/
         *s_fabs.o (.text*)
@@ -376,7 +372,6 @@ SECTIONS
         *ppu_v1.o(.data* .rodata .rodata.* .constdata .constdata.* .conststring .conststring.*)
         *cy_mpc.o(.data* .rodata .rodata.* .constdata .constdata.* .conststring .conststring.*)
         *cy_pd_ppu.o(.data* .rodata .rodata.* .constdata .constdata.* .conststring .conststring.*)
-        *cy_syspm_ppu.o(.data* .rodata .rodata.* .constdata .constdata.* .conststring .conststring.*)
 
         KEEP(*(.cy_l1data*))
 
@@ -404,7 +399,6 @@ SECTIONS
         *ppu_v1.o(.bss* COMMON)
         *cy_mpc.o(.bss* COMMON)
         *cy_pd_ppu.o(.bss* COMMON)
-        *cy_syspm_ppu.o(.bss* COMMON)
         KEEP(*(.cy_l1bss*))
 
         . = ALIGN(4);
@@ -425,7 +419,7 @@ SECTIONS
         __text_begin = .;
 
         *(EXCLUDE_FILE(*cy_smif.o
-                        *cy_smif_memslot.o *cy_smif_sfdp.o *cyhal_syspm.o) .text*)
+                        *cy_smif_memslot.o *cy_smif_sfdp.o) .text*)
 
         KEEP(*(.init))
         KEEP(*(.fini))

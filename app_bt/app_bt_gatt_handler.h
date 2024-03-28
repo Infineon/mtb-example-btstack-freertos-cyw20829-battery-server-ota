@@ -7,7 +7,7 @@
  *
  *
  *******************************************************************************
- * Copyright 2021-2023, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2021-2024, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -52,7 +52,6 @@
 /*******************************************************************************
 *        Variable Definitions
 *******************************************************************************/
-extern cy_ota_agent_mem_interface_t storage_interfaces;
 
 /*******************************************************************************
 *        Function Prototypes

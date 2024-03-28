@@ -1,6 +1,6 @@
 ################################################################################
 # \file Makefile
-# \version 1.0
+# \version 1.1
 #
 # \brief
 # Bluetooth LE Battery Server OTA Application Makefile.
@@ -113,23 +113,22 @@ CY_PYTHON_REQUIREMENT=true
 
 # Python path definition
 ifeq ($(OS),Windows_NT)
-CY_PYTHON_PATH?=python
+    CY_PYTHON_PATH?=python
 else
-CY_PYTHON_PATH?=python3
+    CY_PYTHON_PATH?=python3
 endif
 
-OTA_APP_VERSION_MAJOR=1
-OTA_APP_VERSION_MINOR=0
-OTA_APP_VERSION_BUILD=0
+APP_VERSION_MAJOR?=1
+APP_VERSION_MINOR?=1
+APP_VERSION_BUILD?=0
 
 # Add additional defines to the build process (without a leading -D).
 DEFINES=CY_RETARGET_IO_CONVERT_LF_TO_CRLF CY_RTOS_AWARE STACK_INSIDE_FREE_RTOS
 
-DEFINES+= CYBT_PLATFORM_TRACE_ENABLE=0
- DEFINES+=\
-        APP_VERSION_MAJOR=$(OTA_APP_VERSION_MAJOR)\
-        APP_VERSION_MINOR=$(OTA_APP_VERSION_MINOR)\
-        APP_VERSION_BUILD=$(OTA_APP_VERSION_BUILD)
+DEFINES+=\
+        APP_VERSION_MAJOR=$(APP_VERSION_MAJOR)\
+        APP_VERSION_MINOR=$(APP_VERSION_MINOR)\
+        APP_VERSION_BUILD=$(APP_VERSION_BUILD)
 
 
 ##############################
@@ -164,48 +163,86 @@ CXXFLAGS=
 ASFLAGS=
 
 # Additional / custom linker flags.
-# These are needed for enabling debugging with OpenOCD and GDB in MTB
 ifeq ($(TOOLCHAIN),GCC_ARM)
-LDFLAGS=-Wl,--undefined=uxTopUsedPriority
+    LDFLAGS=-Wl,--undefined=uxTopUsedPriority
 else
-ifeq ($(TOOLCHAIN),IAR)
-LDFLAGS=--keep uxTopUsedPriority
-else
-ifeq ($(TOOLCHAIN),ARM)
-LDFLAGS=--undefined=uxTopUsedPriority
-else
-LDFLAGS=
-endif # ARM
-endif # IAR
-endif # GCC_ARM
+    ifeq ($(TOOLCHAIN),IAR)
+        LDFLAGS=--keep uxTopUsedPriority
+    else
+        ifeq ($(TOOLCHAIN),ARM)
+            LDFLAGS=--undefined=uxTopUsedPriority
+            LDFLAGS+=--diag_suppress=L6314W
+        else
+            LDFLAGS=
+        endif
+    endif
+endif
 
 # Additional / custom libraries to link in to the application.
 LDLIBS=
 # Custom pre-build commands to run.
 PREBUILD=
 
+CY_TOOLCHAIN_ARM_NOT_SUPPORTED = true
+CY_TOOLCHAIN_IAR_NOT_SUPPORTED = true
+
 # Custom post-build commands to run.
 POSTBUILD=
 
-OTA_PLATFORM = CYW20829
-XIP_MODE = XIP
+################################################################################
+################################################################################
+# Basic OTA configuration
+################################################################################
+################################################################################
+
+################################################################################
+#
+# OTA Build debugging
+#
+# OTA_BUILD_VERBOSE=1              Output info about Defines
+# OTA_BUILD_FLASH_VERBOSE=1        Output info about Flash layout
+# OTA_BUILD_COMPONENTS_VERBOSE=1   Output info about COMPONENTS, DEFINES, CY_IGNORE
+# OTA_BUILD_DEFINES_VERBOSE=1      Output info about DEFINES
+# OTA_BUILD_IGNORE_VERBOSE=1       Output info about CY_IGNORE
+# OTA_BUILD_POST_VERBOSE=1         Output info about POSTBUILD values
+#
+#
+###############################################################################
+# Set to 1 to get more OTA Makefile / Build information for debugging build issues
+OTA_BUILD_VERBOSE=
+
+# Define to enable OTA logs
+#DEFINES+=ENABLE_OTA_BOOTLOADER_ABSTRACTION_LOGS
+DEFINES+=ENABLE_OTA_LOGS
+
 OTA_SUPPORT = 1
-OTA_BT_ONLY = 1
 OTA_BT_SUPPORT = 1
 OTA_BT_SECURE = 0
-FLASH_BASE_ADDRESS = 0x60000000
-OTA_FLASH_MAP = ./flash_map_json/cyw20829_xip_swap_single.json
-DEFINES+=ENABLE_OTA_LOGS ENABLE_OTA
-OTA_LINKER_FILE = ./template/TARGET_CYW920829M2EVK-02/COMPONENT_CM33/TOOLCHAIN_GCC_ARM/cyw20829_ns_flash_cbus_ota_xip.ld
-    echo "Linker script path: $OTA_LINKER_FILE"
-    ifneq ($(MAKECMDGOALS),getlibs)
+OTA_BT_DEBUG = 0
+ACTUAL_TARGET=$(subst APP_,,$(TARGET))
+
+ifeq ($(ACTUAL_TARGET), CYW920829M2EVK-02)
+    OTA_PLATFORM=CYW20829
+    OTA_FLASH_MAP=./flash_map_json/cyw20829_xip_swap_single.json
+    OTA_LINKER_FILE = ./template/TARGET_CYW920829M2EVK-02/COMPONENT_CM33/TOOLCHAIN_GCC_ARM/cyw20829_ns_flash_sahb_ota_xip.ld
+endif
+
+ifeq ($(ACTUAL_TARGET), CYW989829M2EVB-01)
+    OTA_PLATFORM=CYW89829
+    OTA_FLASH_MAP=./flash_map_json/cyw89829_xip_swap_single.json
+    OTA_LINKER_FILE = ./template/TARGET_CYW989829M2EVB-01/COMPONENT_CM33/TOOLCHAIN_GCC_ARM/cyw89829_ns_flash_sahb_ota_xip.ld
+endif
+
+ifneq ($(MAKECMDGOALS),getlibs)
     ifneq ($(MAKECMDGOALS),get_app_info)
-    ifneq ($(MAKECMDGOALS),printlibs)
-       include ../mtb_shared/ota-update/release-v*/makefiles/target_ota.mk
-       include ../mtb_shared/ota-update/release-v*/makefiles/mcuboot_flashmap.mk
+        ifneq ($(MAKECMDGOALS),printlibs)
+            LIB_VER_NAME=$(shell cat ./deps/ota-update.mtb | awk -F\# '{print $$2}')
+            include ../mtb_shared/ota-update/$(LIB_VER_NAME)/makefiles/ota_update.mk
+            LIB_VER_NAME=$(shell cat ./deps/ota-bootloader-abstraction.mtb | awk -F\# '{print $$2}')
+            include ../mtb_shared/ota-bootloader-abstraction/$(LIB_VER_NAME)/makefiles/mcuboot/mcuboot_support.mk
+        endif
     endif
-    endif
-    endif
+endif
 include ./local.mk
 
 ################################################################################
@@ -236,7 +273,6 @@ CY_GETLIBS_SHARED_NAME=mtb_shared
 # IDE provided compiler by default).
 CY_COMPILER_PATH=
 
-
 # Locate ModusToolbox IDE helper tools folders in default installation
 # locations for Windows, Linux, and macOS.
 CY_WIN_HOME=$(subst \,/,$(USERPROFILE))
@@ -255,7 +291,7 @@ CY_TOOLS_PATHS+=
 CY_TOOLS_DIR=$(lastword $(sort $(wildcard $(CY_TOOLS_PATHS))))
 
 ifeq ($(CY_TOOLS_DIR),)
-$(error Unable to find any of the available CY_TOOLS_PATHS -- $(CY_TOOLS_PATHS). On Windows, use forward slashes.)
+    $(error Unable to find any of the available CY_TOOLS_PATHS -- $(CY_TOOLS_PATHS). On Windows, use forward slashes.)
 endif
 
 $(info Tools Directory: $(CY_TOOLS_DIR))

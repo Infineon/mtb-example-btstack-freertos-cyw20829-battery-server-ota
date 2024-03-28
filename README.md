@@ -3,7 +3,7 @@
 This code example demonstrates the implementation of a simple Bluetooth&reg; battery service. The battery service exposes the battery level of the device and supports over-the-air (OTA) update over a Bluetooth&reg; Low Energy connection. The app downloads and writes the image to the secondary slot. On the next reboot, MCUboot copies the new image over to the primary slot and runs the application. If the new image is not validated in run time, on the next reboot, MCUboot reverts to the previously validated image.
 
 
-[View this README on GitHub.](https://github.com/Infineon/mtb-example-btstck-freertos-cyw20829-battery-server-ota)
+[View this README on GitHub.](https://github.com/Infineon/mtb-example-btstack-freertos-cyw20829-battery-server-ota)
 
 [Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyMzAyOTkiLCJTcGVjIE51bWJlciI6IjAwMi0zMDI5OSIsIkRvYyBUaXRsZSI6IkJsdWV0b290aCZyZWc7IExFIEJhdHRlcnkgU2VydmVyIHdpdGggT1RBIHVwZGF0ZSIsInJpZCI6ImFtbWwiLCJEb2MgdmVyc2lvbiI6IjUuMi4wIiwiRG9jIExhbmd1YWdlIjoiRW5nbGlzaCIsIkRvYyBEaXZpc2lvbiI6Ik1DRCIsIkRvYyBCVSI6IklDVyIsIkRvYyBGYW1pbHkiOiJCVEFCTEUifQ==)
 
@@ -13,6 +13,7 @@ This code example demonstrates the implementation of a simple Bluetooth&reg; bat
 - [ModusToolbox&trade; software](https://www.infineon.com/modustoolbox) v3.0 or later (tested with v3.0)
 - Board support package (BSP) minimum required version for:
    - CYW920829M2EVK-02: v1.0.1
+   - CYW989829M2EVB-01: v1.0.1
 - Programming language: C
 - Associated parts:[AIROC&trade; CYW20829 Bluetooth&reg; LE SoC](https://www.infineon.com/cms/en/product/promopages/airoc20829)
 
@@ -23,6 +24,7 @@ This code example demonstrates the implementation of a simple Bluetooth&reg; bat
 ## Supported kits (make variable 'TARGET')
 
 - [AIROC&trade; CYW20829 Bluetooth&reg; LE Evaluation Kit](https://www.infineon.com/CYW920829M2EVK-02) (`CYW920829M2EVK-02`) – Default value of `TARGET`
+- AIROC&trade; CYW89829 Bluetooth&reg; LE evaluation kit (`CYW989829M2EVB-01`)
 
 ## Hardware setup
 
@@ -176,8 +178,6 @@ For a list of supported IDEs and more details, see the "Exporting to IDEs" secti
       ```
    </details>
 
-3. After programming, the application starts automatically.
-
 ## Debugging
 
 You can debug the example to step through the code. In the IDE, use the **\<Application Name> Debug (KitProg3_MiniProg4)** configuration in the **Quick Panel**. For details, see the "Program and debug" section in the [Eclipse IDE for ModusToolbox&trade; software user guide](https://www.infineon.com/MTBEclipseIDEUserGuide).
@@ -192,7 +192,7 @@ The MCUboot application must built and programmed separately.
 
 1. Open a CLI terminal and run the following command:
    ```
-   git clone https://github.com/JuulLabs-OSS/mcuboot.git
+   git clone https://github.com/mcu-tools/mcuboot
    ```
 2. Navigate to the cloned mcuboot folder:
    ```
@@ -200,7 +200,7 @@ The MCUboot application must built and programmed separately.
    ```
 3. Change the branch to get the appropriate version:
    ```
-   git checkout v1.8.4-cypress
+   git checkout v1.9.1-cypress
    ```
 4. Pull in sub-modules to build mcuboot:
    ```
@@ -208,11 +208,12 @@ The MCUboot application must built and programmed separately.
    ```
 5. Install the required Python packages mentioned in mcuboot/scripts/requirements.txt. Please see the ModusToolbox&trade; user guide for information on CY_PYTHON_PATH environment variable usage:
    ```
-   cd mcuboot/scripts
+   cd scripts
    pip install -r requirements.txt
+   ```
 
 ### Note
-Check the cysecuretools version. It must be version 4.2.0 or above for CYW20829
+Check the cysecuretools version. It must be version 5.1.0 or above for CYW89829
 
    Command to check the cysecure tool version
 
@@ -230,14 +231,14 @@ If in case your system has the older version of the cysecuretools, use the follo
    ```
    cd mcuboot/boot/cypress
    ```
-2. Copy cyw20829_xip_swap_single.json from the battery server application in flash_map_json folder and  paste it in the mcuboot/boot/cypress directory.
+2. Copy cyw20829_xip_swap_single.json from the battery server application in flash_map_json folder and paste it in the mcuboot/boot/cypress directory.
 3. Use the following command to build the MCUboot application.
    ```
     make clean app APP_NAME=MCUBootApp PLATFORM=CYW20829 USE_CUSTOM_DEBUG_UART=1 USE_EXTERNAL_FLASH=1 USE_XIP=1 FLASH_MAP=./cyw20829_xip_swap_single.json TOOLCHAIN_PATH=c:/Users/$(USERNAME)/ModusToolbox/tools_3.1/gcc
     ```
 4. Run the following command
    ```
-   export OPENOCD=C:/Users/$(USERNAME)/ModusToolbox/tools_3.1/openocd
+   export OPENOCD=C:/Users/${USERNAME}/ModusToolbox/tools_3.1/openocd
    ```
 5. Use the following command to erase the board
    ```
@@ -246,6 +247,11 @@ If in case your system has the older version of the cysecuretools, use the follo
 6. Run the following command to program the MCUboot application.
    ```
    ${OPENOCD}/bin/openocd -s "$OPENOCD/scripts" -f "$OPENOCD/scripts/interface/kitprog3.cfg" -c "set ENABLE_ACQUIRE 0" -c "set SMIF_BANKS { 0 {addr 0x60000000 size 0x100000 psize 0x100 esize 0x1000} }" -f $OPENOCD/scripts/target/cyw20829.cfg -c "init; reset init; flash write_image "MCUBootApp/out/CYW20829/Debug/MCUBootApp.hex" 0x00000000; init; reset init; reset run; shutdown"
+   ```
+ <img src="images/mcuboot.png" width="50%">
+
+ **Note:** To reprogram the user application, the flash must first be erased, followed by the reprogramming of MCUboot and the application.
+
 
 ### Steps to program the OTA enabled Battery Server application
 1. Click on the build application in the Quick Panel.
@@ -264,7 +270,7 @@ The app also supports OTA updates over Bluetooth&reg; LE. A peer app is used to 
 
 
 #### For preparing the OTA update image, do the following changes to the app:
-1. Update the app version number in the Makefile by changing the OTA_APP_VERSION_MAJOR, OTA_APP_VERSION_MINOR, OTA_APP_VERSION_BUILD. In this example, update the version to 1.1.0 by modifying OTA_APP_VERSION_MINOR to 1.
+1. Update the app version number in the Makefile by changing the APP_VERSION_MAJOR, APP_VERSION_MINOR, APP_VERSION_BUILD. In this example, update the version to 1.1.0 by modifying OTA_APP_VERSION_MINOR to 1.
 
 2. Build the app, but DO NOT PROGRAM. This version of the app will be used to push to the device via the peer Windows app (WsOtaUpgrade.exe).
 
@@ -277,7 +283,7 @@ The app also supports OTA updates over Bluetooth&reg; LE. A peer app is used to 
 5. In the dialog box that appears, select your device and click OK (IFX KEYBOARD in this case). In the next window, click **Start** to begin pushing the OTA update image to the device.
 
    **Figure 2. Select your device**
-   
+
    <img src="images/ws-select.png" width="50%">
 
    **Figure 3. WsOtaUpgrade app start**
@@ -309,9 +315,10 @@ You can monitor the progress on the Windows peer app via the progress bar or via
 6. Navigate to the directory where the .bin is located.
 7. Click on **Update** to start OTA.
 
-**Figure 6. Steps to update OTA**
+**Figure 7. Steps to update OTA**
 
 <img src="images/android_ota.png" width="65%">
+
 
 ### Resources and settings
 **Table 1. Application resources**
@@ -347,6 +354,7 @@ Document title: *CE238975* – *AIROC&trade; CYW20829 Bluetooth&reg; LE battery 
  Version | Description of change
  ------- | ---------------------
  1.0.0   | New code example
+ 1.1.0   | Updated to support ota-update v4.1.0 <br> Added support for CYW989829M2EVB-01
 
 <br>
 

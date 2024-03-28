@@ -7,7 +7,7 @@
  *
  *
  *******************************************************************************
- * Copyright 2021-2023, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2021-2024, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -52,9 +52,9 @@
 #include "cycfg_bt_settings.h"
 /* FreeRTOS header file */
 #include <FreeRTOS.h>
+#include <task.h>
 /* OTA related header files */
 #include "app_ota_context.h"
-#include "cy_ota_platform.h"
 
 /*******************************************************************************
 *        Macro Definitions

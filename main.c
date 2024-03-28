@@ -77,10 +77,9 @@
 #include <task.h>
 /* OTA related header files */
 #include "cy_log.h"
-#include "cy_ota_api.h"
 #include "app_ota_context.h"
-#include "app_ota_serial_flash.h"
-#include "cy_ota_platform.h"
+#include "cy_ota_storage_api.h"
+#include "app_ota_context.h"
 #include "cybsp_bt_config.h"
 
 /*******************************************************************************
@@ -95,7 +94,7 @@
 /*******************************************************************************
 *        Variable Definitions
 *******************************************************************************/
-extern cy_ota_agent_mem_interface_t storage_interfaces;
+
 extern TaskHandle_t bas_task_handle;
 
 /*******************************************************************************
@@ -105,19 +104,19 @@ extern TaskHandle_t bas_task_handle;
 /******************************************************************************
 *       Function Definitions
  ******************************************************************************/
-/**
-*  Function name:
-*  main
-*
-*  Function Description:
-*  @brief    Entry point to the application. Set device configuration and start
-*            BT stack initialization.  The actual application initialization
-*            will happen when stack reports that BT device is ready.
-*
-*  @param    void
-*
-*  @return   int
-*/
+ /**
+ *  Function name:
+ *  main
+ *
+ *  Function Description:
+ *  @brief    Entry point to the application. Set device configuration and start
+ *            BT stack initialization.  The actual application initialization
+ *            will happen when stack reports that BT device is ready.
+ *
+ *  @param    void
+ *
+ *  @return   int
+ */
 int main()
 {
     cy_rslt_t cy_result;
@@ -137,13 +136,13 @@ int main()
 
     /* Initialize retarget-io to use the debug UART port */
     cy_retarget_io_init(CYBSP_DEBUG_UART_TX, CYBSP_DEBUG_UART_RX,
-                        CY_RETARGET_IO_BAUDRATE);
+        CY_RETARGET_IO_BAUDRATE);
 
     /* default for all logging to WARNING */
-    cy_log_init(CY_LOG_WARNING, NULL, NULL);
+    cy_log_init(CY_LOG_INFO, NULL, NULL);
 
     /* default for OTA logging to NOTICE */
-    cy_ota_set_log_level(CY_LOG_NOTICE);
+    cy_ota_set_log_level(CY_LOG_INFO);
 
 
     /*Initialize QuadSPI if using external flash*/
@@ -165,17 +164,33 @@ int main()
     /* set default values for battery server context */
     ota_initialize_default_values();
 
+    /* We need to init from every ext flash write
+     * See serial_flash.h in app itself.
+     */
+    printf("call cy_ota_storage_init()\n");
+    if (cy_ota_storage_init() != CY_RSLT_SUCCESS)
+    {
+        printf("ERROR returned from cy_ota_storage_init()!!!!!\n");
+    }
     /* Validate the update so we do not revert on reboot */
-    cy_ota_storage_validated(&storage_interfaces);
+    cy_result = cy_ota_storage_image_validate(0);
+    if (cy_result != CY_RSLT_SUCCESS)
+    {
+        printf("cy_ota_storage_image_validate() Failed\n");
+    }
+    else
+    {
+        printf("cy_ota_storage_image_validate() Successful\n");
+    }
 
     if (cy_ota_ble_check_build_vs_configurator() != CY_RSLT_SUCCESS)
+    {
+        printf("Failed configurator check \r \n");
+        while(true)
         {
-            printf("Failed configurator check \r \n");
-            while(true)
-            {
-                cy_rtos_delay_milliseconds(1000);
-            }
+            cy_rtos_delay_milliseconds(1000);
         }
+    }
 
     /* Clear watchdog so it doesn't reboot on us */
     cyhal_wdt_init(&wdt_obj, cyhal_wdt_get_max_timeout_ms());
