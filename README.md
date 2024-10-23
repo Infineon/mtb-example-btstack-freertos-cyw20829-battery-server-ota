@@ -200,7 +200,7 @@ The MCUboot application must built and programmed separately.
    ```
 3. Change the branch to get the appropriate version:
    ```
-   git checkout v1.9.1-cypress
+   git checkout v1.9.4-cypress
    ```
 4. Pull in sub-modules to build mcuboot:
    ```
@@ -213,7 +213,7 @@ The MCUboot application must built and programmed separately.
    ```
 
 ### Note
-Check the cysecuretools version. It must be version 5.1.0 or above for CYW89829
+Check the cysecuretools version. It must be version 6.1.0 or above for CYW89829 & CYW20829 **(Secure Silicon)**
 
    Command to check the cysecure tool version
 
@@ -232,14 +232,35 @@ If in case your system has the older version of the cysecuretools, use the follo
    cd mcuboot/boot/cypress
    ```
 2. Copy cyw20829_xip_swap_single.json from the battery server application in flash_map_json folder and paste it in the mcuboot/boot/cypress directory.
-3. Use the following command to build the MCUboot application.
+3. Use the following command to BUILD (No-Secure) the MCUboot application. For SECURE Silicon please refer section below.
    ```
-    make clean app APP_NAME=MCUBootApp PLATFORM=CYW20829 USE_CUSTOM_DEBUG_UART=1 USE_EXTERNAL_FLASH=1 USE_XIP=1 FLASH_MAP=./cyw20829_xip_swap_single.json TOOLCHAIN_PATH=c:/Users/$(USERNAME)/ModusToolbox/tools_3.1/gcc
-    ```
+    make clean app APP_NAME=MCUBootApp PLATFORM=CYW20829 USE_CUSTOM_DEBUG_UART=1 USE_EXTERNAL_FLASH=1 USE_XIP=1 FLASH_MAP=./cyw20829_xip_swap_single.json TOOLCHAIN_PATH=c:/Users/$(USERNAME)/ModusToolbox/tools_3.2/gcc
+   ```
+>#### <b>SECURE SILICON USAGE</b>
+>
+>For secure silicon usage, please visit https://github.com/Infineon/cysecuretools/blob/master/docs/README_CYW20829.md and understand the process of creating keys, and provisioning device with it. There will be folders named "keys", "packets" and "policy" which will contain encryption and signing keys, Debug certificate, and policies, respectively generated in the process. Please visit https://github.com/mcu-tools/mcuboot/blob/v1.9.4-cypress/boot/cypress/platforms/CYW20829.md and understand the MCUBoot building process for secure silicon and its overall usage as a bootloader.
+>Place keys,policy and debug certificate related folders in cypress directory (/mcuboot/boot/cypress/).
+>Navigate to the same folder in modus-shell and use following command according to your use case to build MCUBoot application.
+>
+>For <b>Method 1</b>
+>
+>*Method 1 is not supported currently on this Code Example !*
+>
+>For <b>Method 2</b>
+>   ```
+>   make clean app APP_NAME=MCUBootApp PLATFORM=CYW20829 BUILDCFG=Debug FLASH_MAP=platforms/memory/CYW20829/flashmap/cyw20829_xip_swap_single.json LCS=SECURE SMIF_ENC=1 TOOLCHAIN_PATH=c:/Users/$(USERNAME)/ModusToolbox/tools_3.2/gcc
+>   ```
+
 4. Run the following command
    ```
    export OPENOCD=C:/Users/${USERNAME}/ModusToolbox/tools_3.1/openocd
    ```
+>#### <b>SECURE SILICON USAGE</b>
+>
+>In command below (5 & 6), add following to pass debug certificate parameter (mandatory for secure silicon)
+><b> -c "set DEBUG_CERTIFICATE ./packets/debug_cert.bin" </b>
+>
+
 5. Use the following command to erase the board
    ```
     ${OPENOCD}/bin/openocd -s "$OPENOCD/scripts" -f "$OPENOCD/scripts/interface/kitprog3.cfg" -c "set ENABLE_ACQUIRE 0" -c "set SMIF_BANKS { 0 {addr 0x60000000 size 0x800000 psize 0x100 esize 0x40000} }" -f $OPENOCD/scripts/target/cyw20829.cfg -c "init; reset init; flash erase_address 0x60000000 0x100000; shutdown"
@@ -248,22 +269,40 @@ If in case your system has the older version of the cysecuretools, use the follo
    ```
    ${OPENOCD}/bin/openocd -s "$OPENOCD/scripts" -f "$OPENOCD/scripts/interface/kitprog3.cfg" -c "set ENABLE_ACQUIRE 0" -c "set SMIF_BANKS { 0 {addr 0x60000000 size 0x100000 psize 0x100 esize 0x1000} }" -f $OPENOCD/scripts/target/cyw20829.cfg -c "init; reset init; flash write_image "MCUBootApp/out/CYW20829/Debug/MCUBootApp.hex" 0x00000000; init; reset init; reset run; shutdown"
    ```
+
  <img src="images/mcuboot.png" width="50%">
 
  **Note:** To reprogram the user application, the flash must first be erased, followed by the reprogramming of MCUboot and the application.
 
 
 ### Steps to program the OTA enabled Battery Server application
+> **For Secure silicon, Please make sure "CY_DEVICE_LCS=SECURE" is uncommented in main MAKEFILE.**
+> Copy <b>"MCUBootApp.signed_nonce.bin"</b> generated while building MCUBoot application in, root folder of application (Bluetooth_LE_Battery_Server_with_OTA).
+> Please note that every time MCUBoot application is built "MCUBootApp.signed_nonce.bin" is generated and same must be used while building user (L2) application.
+
 1. Click on the build application in the Quick Panel.
 2. Click on the terminal in the ModusToolbox&trade; IDE
 3. Run the following command
    ```
-   export OPENOCD=C:/Users/$(USERNAME)/ModusToolbox/tools_3.1/openocd
+   export OPENOCD=C:/Users/$(USERNAME)/ModusToolbox/tools_3.2/openocd
    ```
-5. Command to program the OTA enabled battery server application
+5. Command to program the OTA enabled battery server application (Non-Secure).
    ```
    ${OPENOCD}/bin/openocd -s "$OPENOCD/scripts" -f "$OPENOCD/scripts/interface/kitprog3.cfg" -c "set ENABLE_ACQUIRE 0" -c "set SMIF_BANKS { 0 {addr 0x60000000 size 0x100000 psize 0x100 esize 0x1000} }" -f $OPENOCD/scripts/target/cyw20829.cfg -c "init; reset init; flash write_image "build/APP_CYW920829M2EVK-02/Release/mtb-example-btstack-freertos-cyw20829-battery-server-ota.final.hex"; init; reset init; reset run; shutdown"
    ```
+>#### <b>SECURE SILICON USAGE</b>
+>
+>If using Secure silicon please make sure apropriate DEFINES are enabled in applicatino makefile. Please copy key, debug certificate and policy related folders in root directory of this project (Bluetooth_LE_Battery_Server_with_OTA) Use following commands to program "encrypted.bin" binary which will flash signed and encrypted firmware at particular location in 20829 flash.
+>
+><b>Method 1</b>
+>
+>*Method 1 is not supported currently in this Code Example*
+>
+><b>Method 2</b>
+>  ```
+>  ${OPENOCD}/bin/openocd -s "$OPENOCD/scripts" -f "$OPENOCD/scripts/interface/kitprog3.cfg" -c "set ENABLE_ACQUIRE 0" -c "set DEBUG_CERTIFICATE ./packets/debug_cert.bin" -c "set SMIF_BANKS { 0 {addr 0x60000000 size 0x100000 psize 0x100 esize 0x1000} }" -f $OPENOCD/scripts/target/cyw20829.cfg -c "init; reset init; flash write_image "build/APP_CYW920829M2EVK-02/Release/mtb-example-btstack-freertos-cyw20829-battery-server-ota.encrypted.bin" 0x60020000; init; reset init; reset run; shutdown"
+>  ```
+
  <img src="images/application.png" width="50%">
 
 
@@ -276,7 +315,17 @@ The app also supports OTA updates over Bluetooth&reg; LE. A peer app is used to 
 
 2. Build the app, but DO NOT PROGRAM. This version of the app will be used to push to the device via the peer Windows app (WsOtaUpgrade.exe).
 
-3. In the project directory, navigate to build/<TARGET>/Config and locate the .bin file. Copy this file to the same directory as the peer app (WsOtaUpgrade.exe). It is located at btsdk-peer-apps-ota/tree/master/Windows/WsOtaUpgrade/Release/<System Type>.
+3. In the project directory, navigate to build/<b>TARGET</b>/Release/ and locate the .bin file. Copy this file to the same directory as the peer app (WsOtaUpgrade.exe). It is located at /mtb_shared/ota-update/release-vX.x.x/scripts/Bluetooth/
+>#### <b>SECURE SILICON USAGE</b>
+>
+>If using Secure silicon please copy following binary according to method used for building MCUBoot and User application.  
+>
+><b>Method 1</b>
+>**Method 1 is not supported currently in this Code Example**
+>
+><b>Method 2</b>
+>Copy "mtb-example-btstack-freertos-cyw20829-battery-server-ota.update.signed.bin" file to the above mentioned folder.
+
 
 4. Open the terminal and navigate to WsOtaUpgrade.exe. Initiate the update process by running the following command:
    ```
@@ -358,6 +407,7 @@ Document title: *CE238975* – *AIROC&trade; CYW20829 Bluetooth&reg; LE battery 
  1.0.0   | New code example
  1.1.0   | Updated to support ota-update v4.1.0 <br> Added support for CYW989829M2EVB-01
  2.0.0   | BSP and BTStack-integration major update for BT Firmware as a separate asset
+ 2.0.1   | Secure silicon information updates in readme and makefile
 
 <br>
 
