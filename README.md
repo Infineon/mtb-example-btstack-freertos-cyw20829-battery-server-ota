@@ -12,8 +12,8 @@ This code example demonstrates the implementation of a simple Bluetooth&reg; bat
 
 - [ModusToolbox&trade; software](https://www.infineon.com/modustoolbox) v3.2 or later (tested with v3.2)
 - Board support package (BSP) minimum required version for:
-   - CYW920829M2EVK-02: v2.0.0
-   - CYW989829M2EVB-01: v2.0.0
+   - CYW920829M2EVK-02: v3.0.0
+   - CYW989829M2EVB-01: v3.0.0
 - Programming language: C
 - Associated parts:[AIROC&trade; CYW20829 Bluetooth&reg; LE SoC](https://www.infineon.com/cms/en/product/promopages/airoc20829)
 
@@ -329,7 +329,7 @@ The app also supports OTA updates over Bluetooth&reg; LE. A peer app is used to 
 
 4. Open the terminal and navigate to WsOtaUpgrade.exe. Initiate the update process by running the following command:
    ```
-   ./WsOtaUpgrade.exe <App_name>.bin
+   ./WsOtaUpgrade.exe <App_name>signed.bin
    ```
 5. In the dialog box that appears, select your device and click OK (IFX KEYBOARD in this case). In the next window, click **Start** to begin pushing the OTA update image to the device.
 
@@ -408,6 +408,7 @@ Document title: *CE238975* – *AIROC&trade; CYW20829 Bluetooth&reg; LE battery 
  1.1.0   | Updated to support ota-update v4.1.0 <br> Added support for CYW989829M2EVB-01
  2.0.0   | BSP and BTStack-integration major update for BT Firmware as a separate asset
  2.0.1   | Secure silicon information updates in readme and makefile
+ 2.1.0   | Update MPN for CYW20829
 
 <br>
 
