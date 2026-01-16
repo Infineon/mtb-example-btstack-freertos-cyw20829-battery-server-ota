@@ -200,7 +200,7 @@ The MCUboot application must built and programmed separately.
    ```
 3. Change the branch to get the appropriate version:
    ```
-   git checkout v1.9.4-cypress
+   git checkout v1.9.8-cypress
    ```
 4. Pull in sub-modules to build mcuboot:
    ```
@@ -238,7 +238,7 @@ If in case your system has the older version of the cysecuretools, use the follo
    ```
 >#### <b>SECURE SILICON USAGE</b>
 >
->For secure silicon usage, please visit https://github.com/Infineon/cysecuretools/blob/master/docs/README_CYW20829.md and understand the process of creating keys, and provisioning device with it. There will be folders named "keys", "packets" and "policy" which will contain encryption and signing keys, Debug certificate, and policies, respectively generated in the process. Please visit https://github.com/mcu-tools/mcuboot/blob/v1.9.4-cypress/boot/cypress/platforms/CYW20829.md and understand the MCUBoot building process for secure silicon and its overall usage as a bootloader.
+>For secure silicon usage, please visit https://github.com/Infineon/cysecuretools/blob/master/docs/README_CYW20829.md and understand the process of creating keys, and provisioning device with it. There will be folders named "keys", "packets" and "policy" which will contain encryption and signing keys, Debug certificate, and policies, respectively generated in the process. Please visit https://github.com/mcu-tools/mcuboot/blob/v1.9.8-cypress/boot/cypress/platforms/CYW20829.md and understand the MCUBoot building process for secure silicon and its overall usage as a bootloader.
 >Place keys,policy and debug certificate related folders in cypress directory (/mcuboot/boot/cypress/).
 >Navigate to the same folder in modus-shell and use following command according to your use case to build MCUBoot application.
 >
@@ -409,6 +409,7 @@ Document title: *CE238975* – *AIROC&trade; CYW20829 Bluetooth&reg; LE battery 
  2.0.0   | BSP and BTStack-integration major update for BT Firmware as a separate asset
  2.0.1   | Secure silicon information updates in readme and makefile
  2.1.0   | Update MPN for CYW20829
+ 3.0.0   | Updated btstack-integration with version 7.X
 
 <br>
 
